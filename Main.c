@@ -6,6 +6,8 @@
 #include "Area.h"
 #include "Superficie.h"
 #include "Volumen.h"
+#include <time.h>
+#define MAX_LARGO 100
 
 int preguntarFiguraGeometrica(char* figuras[]);
 int preguntarMetodo(int indice, char* figura);
@@ -15,16 +17,72 @@ void calcularSuperficie(int figura);
 void calcularVolumen(int figura);
 void calcular(int metodo, int figura);
 bool preguntarContinuar();
+bool iniciarUsuario();
+void init();
+void guardar_log(char* usuario, char* accion);
+char* fecha();
 
 int main(){
+    char usuario[MAX_LARGO], clave[MAX_LARGO];
+    printf("Ingresa tus credenciales (Puedes ver tus credenciales en el archivo usuarios.txt):\n");
+    printf("\nUsuario: ");
+    scanf("%s", usuario);
+    printf("\nClave: ");
+    scanf("%s", clave);
+    bool userValido = iniciarUsuario(usuario, clave);
+    if (userValido){
+        guardar_log(usuario, "Ingreso exitoso al sistema");
+        init(usuario);
+    }
+    else{
+        guardar_log(usuario, "Ingreso fallido usuario/clave erróneo");
+        printf("Usuario o clave invalida, revise el archivo usuarios.txt\n");
+    }
+    guardar_log(usuario, "Salida del sistema");
+}
+
+void init(char* usuario){
     char *figuras[200] = {"Triangulo", "Paralelogramo", "Cuadrado", "Rectangulo", "Rombo", "Trapecio", "Circulo", "Poligono Regular", "Cubo", "Cuboide", "Cilindro Recto", "Esfera", "Cono Circular Recto"};
     bool continuar = true;
     do {
         int indiceFigura = preguntarFiguraGeometrica(figuras);
+        guardar_log(usuario, figuras[indiceFigura-1]);
         int metodo = preguntarMetodo(indiceFigura, figuras[indiceFigura-1]);
         calcular(metodo, indiceFigura);
         continuar = preguntarContinuar();
     } while (continuar);
+}
+
+bool iniciarUsuario(char* usuario, char* clave){
+    FILE *archivo = fopen("usuarios.txt", "r");
+    char linea[MAX_LARGO];
+    while (fgets(linea, sizeof(linea), archivo)){
+        char usuarioArchivo[MAX_LARGO];
+        char claveArchivo[MAX_LARGO];
+        if (sscanf(linea, "%[^-]-%s", usuarioArchivo, claveArchivo) == 2){
+            if (strcmp(usuario, usuarioArchivo) == 0 && strcmp(clave, claveArchivo) == 0) {
+                fclose(archivo);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void guardar_log(char* usuario, char* accion){
+    FILE *archivo = fopen("log.txt", "a");
+    fprintf(archivo, "%s-%s-%s\n", fecha(),usuario, accion);
+    fclose(archivo);
+}
+
+char* fecha(){
+    time_t tiempo_actual;
+    struct tm *tiempo_local;
+    tiempo_actual = time(NULL);
+    tiempo_local = localtime(&tiempo_actual);
+    static char fecha_formateada[50];
+    strftime(fecha_formateada, sizeof(fecha_formateada), "%Y-%m-%d %H:%M:%S", tiempo_local);
+    return fecha_formateada;
 }
 
 int preguntarFiguraGeometrica(char* figuras[]){
